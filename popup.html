@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <h3>AI Form Filler</h3>
+
+  <div id="notEgram" class="warn hidden">Open a form page first.</div>
+
+  <div id="mainPanel" class="hidden">
+    <label>Profile: <select id="profileSelect"></select></label>
+    <button id="fillBtn" class="action">Fill This Page</button>
+    <button id="validateBtn">Validate Profile</button>
+
+    <hr>
+    <div id="resultBox" class="hidden"></div>
+
+    <hr>
+    <div id="prepareSection" class="hidden">
+      <h4>📥 Prepare Uploads</h4>
+      <p class="hint">Click a button → file downloads to <b>Downloads/FormUploads/</b> → drag into the form.</p>
+      <div id="prepareButtons"></div>
+      <div id="prepareStatus"></div>
+    </div>
+
+    <hr>
+    <button id="openOptions">Manage Profiles & Files</button>
+  </div>
+
+  <script src="aliases.js"></script>
+  <script src="filePreparer.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

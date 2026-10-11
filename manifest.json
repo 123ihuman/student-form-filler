@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "AI Form Filler",
+  "version": "4.0",
+  "description": "AI-powered form filler with photo/signature processing, learning, validation, translation, and batch mode.",
+  "permissions": ["storage", "unlimitedStorage", "activeTab", "scripting", "tabs", "downloads"],
+  "host_permissions": ["<all_urls>"],
+    "action": {
+    "default_popup": "popup.html",
+    "default_title": "AI Form Filler"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["preparer.html", "preparer.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js"
+  }
+}

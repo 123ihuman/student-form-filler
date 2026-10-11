@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>AI Form Filler — Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <h1>AI Form Filler</h1>
+
+  <h2>AI Settings</h2>
+  <label>AI Mode:
+    <select id="aiProvider">
+      <option value="ondevice">On-device (Chrome Gemini Nano)</option>
+      <option value="gemini">Google Gemini (needs API key)</option>
+      <option value="openai">OpenAI (needs API key)</option>
+      <option value="none">Off (rules only)</option>
+    </select>
+  </label>
+  <label>API Key (only for cloud): <input type="password" id="aiApiKey" placeholder="sk-... or AIza..."></label>
+  <button id="saveAI">Save AI Settings</button>
+  <div id="aiStatus" style="color:#0a7d33;margin-top:6px;"></div>
+
+  <hr>
+  <h2>Profiles</h2>
+  <div id="profiles"></div>
+  <button id="addProfile">+ Add Empty Profile</button>
+  <button id="addFullTemplate">+ Add Full Template (all fields)</button>
+
+  <hr>
+  <h2>File Uploads</h2>
+  <p style="color:#666;font-size:13px;">Upload your files once. They'll be used on every form.</p>
+  <label>Select Profile: <select id="fileProfileSelect"></select></label>
+  <div id="fileSlots"></div>
+
+  <hr>
+  <h2>Learned Fills</h2>
+  <div id="learnedList"></div>
+  <button id="clearLearned">Clear Learned Data</button>
+
+  <script src="aliases.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
