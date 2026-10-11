@@ -115,8 +115,13 @@ window.SITE_RULES = {
     }
   },
 
-  'mponline.gov.in': {
+    'mponline.gov.in': {
     dateFormat: 'dd-mm-yyyy'
+  },
+
+  'dsssonline.nic.in': {
+    dateFormat: 'dd/mm/yyyy',
+    disableAutoFileInject: true
   },
 
     'cbseitms.nic.in': {
@@ -149,13 +154,24 @@ window.SITE_RULES = {
     }
   },
 
-  'cbseitms.rribbps.in': {
+    'cbseitms.rribbps.in': {
     dateFormat: 'dd-mm-yyyy',
     fileRequirements: {
       photo:           { minKB: 10, maxKB: 100, format: 'image/jpeg' },
       signature:       { minKB: 10, maxKB: 100, format: 'image/jpeg' },
       parentSignature: { minKB: 10, maxKB: 100, format: 'image/jpeg' },
       udidCertificate: { minKB: 50, maxKB: 300, format: 'image/jpeg' }
+    }
+  },
+
+  'bpsconline.bihar.gov.in': {
+    dateFormat: 'dd/mm/yyyy',
+    extraAliases: {
+      fullName: ["candidate name", "परीक्षार्थी का नाम", "candidate's name"],
+      fatherName: ["candidate father name", "परीक्षार्थी के पिता का नाम", "father's name"],
+      motherName: ["candidate mother name", "परीक्षार्थी की माता का नाम", "mother's name"],
+      dob: ["candidate date of birth", "परीक्षार्थी की जन्मतिथि", "date of birth"],
+      gender: ["gender", "लिंग"]
     }
   }
 

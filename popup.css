@@ -55,3 +55,23 @@ hr { border: none; border-top: 1px solid #eee; margin: 10px 0; }
   white-space: pre-line;
   min-height: 14px;
 }
+#studentSearch {
+  width: 100%;
+  padding: 8px 10px;
+  margin: 4px 0 8px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+#studentSearch:focus {
+  outline: none;
+  border-color: #1e40af;
+  box-shadow: 0 0 0 2px rgba(30,64,175,0.15);
+}
+#selectedHint {
+  font-size: 11px;
+  color: #0a7d33;
+  display: block;
+  margin-top: 2px;
+}

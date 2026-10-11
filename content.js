@@ -667,11 +667,11 @@ async function fillInput(input, value) {
     return false;
   }
 
-    const isWidgetDate = input.classList.contains('hasDatepicker') ||
+        const isWidgetDate = input.classList.contains('hasDatepicker') ||
     input.classList.contains('datepicker') ||
     input.classList.contains('date-picker') ||
     input.hasAttribute('angular-mydatepicker') ||
-    input.hasAttribute('readonly') ||
+    (input.hasAttribute('readonly') && /date|dob|birth/i.test(getLabelText(input) + ' ' + (input.name || '') + ' ' + (input.id || ''))) ||
     (input.nextElementSibling && input.nextElementSibling.classList &&
      (input.nextElementSibling.classList.contains('calendar-icon') ||
       input.nextElementSibling.querySelector && input.nextElementSibling.querySelector('.calendar-icon'))) ||
@@ -761,12 +761,20 @@ async function fillInput(input, value) {
     }
   }
 
-  if (input.tagName === 'SELECT') {
+    if (input.tagName === 'SELECT') {
+    // ⚡ Skip options whose text equals the field's own label
+    // (Indian govt forms often use the label as the placeholder option)
+    const fieldLabelNorm = getLabelText(input);
+
     const realOptions = Array.from(input.options).filter(function (o) {
-      return !isPlaceholderOption(o);
+      if (isPlaceholderOption(o)) return false;
+      // Option text equals field label → it's a placeholder
+      if (fieldLabelNorm && normalize(o.text) === fieldLabelNorm) return false;
+      // Option text is generic prompt-like → placeholder
+      if (/^(select|choose|pick|enter|type)\s+\w+/i.test((o.text || '').trim())) return false;
+      return true;
     });
     if (!realOptions.length) return false;
-
     let chosen = null;
     if (typeof window.smartSelectMatch === 'function') {
       chosen = window.smartSelectMatch({ options: realOptions }, value);
@@ -843,8 +851,62 @@ async function fillForm(profile) {
     if (input.offsetParent === null && input.type !== 'radio' && input.type !== 'checkbox') continue;
     if (input.dataset.egramFilled === '1') continue;
 
-    const labelText = getLabelText(input);
+            const labelText = getLabelText(input);
     if (/age as on|age in years|years.*months.*days/i.test(labelText)) continue;
+
+    // ⚡ Skip split-email local-part fields — bankingFix.js handles those correctly
+    if (input.type === 'text' || !input.type) {
+      const isEmailish = /email/i.test(labelText);
+      if (isEmailish) {
+        // Look for a domain select or "@" sibling nearby
+        let scope = input.parentElement;
+        let isSplit = false;
+        for (let hop = 0; hop < 3 && scope && !isSplit; hop++) {
+          const sels = scope.querySelectorAll('select');
+          for (let s = 0; s < sels.length; s++) {
+            const opts = Array.from(sels[s].options || []);
+            if (opts.some(function (o) { return /gmail|yahoo|outlook|hotmail/i.test(o.text || ''); })) {
+              isSplit = true;
+              break;
+            }
+          }
+          scope = scope.parentElement;
+        }
+        if (isSplit) {
+          input.dataset.egramSkip = '1';
+          continue;
+        }
+      }
+    }
+
+        // ⚡ Skip ONLY if the input itself is an OTP/captcha field.
+    // Do NOT skip if a nearby hint merely mentions OTP.
+    const ownAttrs = (
+      (input.name || '') + ' ' +
+      (input.id || '') + ' ' +
+      (input.placeholder || '') + ' ' +
+      (input.getAttribute('aria-label') || '')
+    ).toLowerCase();
+
+    let directLabel = '';
+    if (input.id) {
+      const dl = document.querySelector('label[for="' + input.id + '"]');
+      if (dl) directLabel = (dl.innerText || '').toLowerCase();
+    }
+    const otpCheck = ownAttrs + ' ' + directLabel;
+
+    const isOtpField =
+      /(?:^|\b)(enter|type|input)\s+(the\s+)?(otp|one[\s-]?time[\s-]?(password|code)|verification\s*code|captcha|security\s*code|sms\s*code|email\s*code)/i.test(otpCheck) ||
+      /\botp\s*$/i.test(ownAttrs.trim()) ||
+      /\botp\s*\*/i.test(directLabel) ||
+      /captcha/i.test(ownAttrs) ||
+      /captcha/i.test(directLabel);
+
+    if (isOtpField) {
+      input.style.backgroundColor = '#fff3cd';
+      input.dataset.egramSkip = '1';
+      continue;
+    }
 
     const strippedLabel = labelText
       .replace(/^\s*\(?[ivx]+\)\.?\s+/i, '')
@@ -878,13 +940,31 @@ async function fillForm(profile) {
     }
     if (!value) continue;
 
+    // ⚡ Skip Alternate Mobile if it's the same as Mobile
+    // (many banking forms reject identical numbers)
+    if (matchedKey === 'alternateMobile' && fields.mobile && String(value).replace(/\D/g, '') === String(fields.mobile).replace(/\D/g, '')) {
+      input.style.backgroundColor = '#fff3cd';
+      input.dataset.egramSkip = '1';
+      // Add a small hint text next to the field
+      if (!input.dataset.egramHintShown) {
+        input.dataset.egramHintShown = '1';
+        try {
+          const hint = document.createElement('div');
+          hint.textContent = '⚠ Type a DIFFERENT number (must not match Mobile above)';
+          hint.style.cssText = 'color:#856404;font-size:11px;margin-top:2px;';
+          input.parentElement.appendChild(hint);
+        } catch (e) {}
+      }
+      continue;
+    }
+
     let finalValue = value;
     if (/date|dob|birth/i.test(matchedKey) && input.type !== 'date') {
       const d = parseRobustDate(value);
       if (d && !isNaN(d.getTime())) finalValue = formatDateForField(input, d);
     }
 
-    const ok = await fillInput(input, finalValue);
+        const ok = await fillInput(input, finalValue);
     if (ok) {
       filled.push(matchedKey);
       matchedKeys.add(matchedKey);
@@ -895,6 +975,106 @@ async function fillForm(profile) {
       input.style.backgroundColor = '#fff3cd';
     }
   }
+
+    // ── MIRROR VERIFY FIELDS ──
+  // Match by input name attribute (deterministic, not fuzzy):
+  //   name="verifyCandidateName" → look for name="candidateName"
+  async function mirrorVerifyFields() {
+    const all = document.querySelectorAll(
+      'input:not([type=hidden]):not([type=submit]):not([type=button]):not([type=file]), select, textarea'
+    );
+
+    // Build name → value map from already-filled inputs
+    const byName = {};
+    for (let i = 0; i < all.length; i++) {
+      const el = all[i];
+      if (!el.name) continue;
+      if (!el.value || el.value.trim().length === 0) continue;
+      byName[el.name] = el.value;
+    }
+
+    // Fill every verify-* field from its parent
+    for (let i = 0; i < all.length; i++) {
+      const el = all[i];
+      if (el.disabled || el.readOnly) continue;
+      if (el.value && el.value.trim().length > 0) continue;
+      if (!el.name) continue;
+
+      // Patterns: verifyCandidateName, confirmCandidateName, reEnterCandidateName, etc.
+      const m = el.name.match(/^(verify|confirm|reenter|retype|re_enter)(.+)$/i);
+      if (!m) continue;
+
+      const suffix = m[2]; // "CandidateName"
+
+      // Try common parent-name variants
+      const candidates = [
+        suffix.charAt(0).toLowerCase() + suffix.slice(1),  // candidateName
+        suffix.toLowerCase(),                              // candidatename
+        suffix                                             // CandidateName
+      ];
+
+      let srcValue = null;
+      for (let c = 0; c < candidates.length; c++) {
+        if (byName[candidates[c]]) { srcValue = byName[candidates[c]]; break; }
+      }
+      if (!srcValue) continue;
+
+      try {
+        const proto = el.tagName === 'SELECT'
+          ? window.HTMLSelectElement.prototype
+          : (el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype);
+        const setter = Object.getOwnPropertyDescriptor(proto, 'value').set;
+        setter.call(el, srcValue);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.dispatchEvent(new Event('blur', { bubbles: true }));
+        el.style.backgroundColor = '#d4edda';
+        el.dataset.egramFilled = '1';
+        filled.push('mirror: ' + el.name);
+      } catch (e) {}
+    }
+
+    // Fallback — if any verify field is still empty, try label/placeholder matching
+    for (let i = 0; i < all.length; i++) {
+      const el = all[i];
+      if (el.disabled || el.readOnly) continue;
+      if (el.value && el.value.trim().length > 0) continue;
+
+            const ctx = ((el.placeholder || '') + ' ' + (el.getAttribute('aria-label') || '') + ' ' + (el.name || '')).toLowerCase();
+
+      // ⚡ Never mirror into "alternate" / "alternative" fields — they must differ
+      if (/alternat/i.test(ctx)) continue;
+
+      const mv = ctx.match(/^\s*(?:verify|confirm|re[\s-]?enter)\s+(.+)$/);
+      if (!mv) continue;
+      const wanted = mv[1].replace(/[^a-z0-9]/g, '');
+
+      for (let j = 0; j < all.length; j++) {
+        const src = all[j];
+        if (src === el) continue;
+        if (!src.value || src.value.trim().length === 0) continue;
+        const srcCtx = ((src.placeholder || '') + ' ' + (src.name || '') + ' ' + (src.id || '')).toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (srcCtx.indexOf(wanted) !== -1) {
+          try {
+            const proto = el.tagName === 'SELECT'
+              ? window.HTMLSelectElement.prototype
+              : (el.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype);
+            const setter = Object.getOwnPropertyDescriptor(proto, 'value').set;
+            setter.call(el, src.value);
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+            el.dispatchEvent(new Event('blur', { bubbles: true }));
+            el.style.backgroundColor = '#d4edda';
+            el.dataset.egramFilled = '1';
+            filled.push('mirror-fallback: ' + el.name);
+          } catch (e) {}
+          break;
+        }
+      }
+    }
+  }
+
+  await mirrorVerifyFields();
 
   // ---- AUTO-TICK: any remaining consent/declaration checkboxes ----
   const remainingCbs = document.querySelectorAll('input[type="checkbox"]:not([data-egram-filled="1"])');
@@ -1025,14 +1205,14 @@ async function fillForm(profile) {
           matchedKey = key;
         }
       }
-            if (!matchedKey) continue;
+                  if (!matchedKey) continue;
       let value = fields[matchedKey];
       if (siteRule && siteRule.fieldOverrides && siteRule.fieldOverrides[matchedKey]) {
         value = siteRule.fieldOverrides[matchedKey];
       }
       if (!value) continue;
 
-      const ok = await fillCustomSelect(cd, value);
+      const ok = await fillInput(sel, value);
       if (ok) {
         filled.push(matchedKey + ' (retry-' + (round + 1) + ')');
         sel.dataset.egramFilled = '1';
@@ -1094,33 +1274,39 @@ async function fillForm(profile) {
 }
 
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
-  if (msg.action === 'fillFromPanel') {
+  if (msg.action === 'fillFromPanel' || msg.action === 'fill') {
     (async function () {
+      let result;
       try {
-        const result = await fillForm(msg.profile);
-        sendResponse(result);
+        result = await fillForm(msg.profile);
+        // ⚡ Write result to storage so popup can read it
+        try {
+          await chrome.storage.local.set({
+            lastFillResult: {
+              startedAt: Date.now(),
+              student: (msg.profile && msg.profile.name) || 'Unnamed',
+              filled: (result.filled || []).length,
+              missed: (result.missed || []).length,
+              aiFilled: (result.aiFilled || []).length,
+              files: (result.files && result.files.uploaded) ? result.files.uploaded.length : 0,
+              error: null
+            }
+          });
+        } catch (e) {}
       } catch (err) {
-        sendResponse({ success: false, error: err.message });
+        result = { success: false, error: err.message };
+        try {
+          await chrome.storage.local.set({
+            lastFillResult: {
+              startedAt: Date.now(),
+              filled: 0, missed: 0, aiFilled: 0, files: 0,
+              error: err.message
+            }
+          });
+        } catch (e) {}
       }
-    })();
-    return true;
-  }
-
-  if (msg.action === 'fill') {
-    (async function () {
-      try {
-        const result = await fillForm(msg.profile);
-        sendResponse(result);
-      } catch (err) {
-        sendResponse({
-          success: false,
-          error: err.message,
-          filled: [],
-          missed: [],
-          aiFilled: [],
-          files: { uploaded: [], skipped: [], failed: [] }
-        });
-      }
+      // Try to respond — but port may be closed. Ignore if so.
+      try { sendResponse(result); } catch (e) {}
     })();
     return true;
   }

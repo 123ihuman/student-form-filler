@@ -21,27 +21,52 @@
   <button id="saveAI">Save AI Settings</button>
   <div id="aiStatus" style="color:#0a7d33;margin-top:6px;"></div>
 
-  <hr>
-  <h2>Profiles</h2>
-  <div id="profiles"></div>
-  <button id="addProfile">+ Add Empty Profile</button>
-  <button id="addFullTemplate">+ Add Full Template (all fields)</button>
+    <hr>
+  <h2>👥 Students Manager</h2>
+  <div id="storageBarWrap" style="margin-bottom:12px;">
+    <div style="font-size:12px;color:#666;margin-bottom:4px;">
+      Storage: <b id="storageText">0 MB</b> used across <b id="profileCount">0</b> profiles
+    </div>
+    <div style="height:8px;background:#e9ecef;border-radius:4px;overflow:hidden;">
+      <div id="storageBar" style="height:100%;background:#28a745;width:0%;transition:width 0.3s;"></div>
+    </div>
+  </div>
 
-  <hr>
-  <h2>📥 Import Student File</h2>
-  <p style="color:#666;font-size:13px;">
-    Student sends you their <b>_profile.json</b> file → click below to load it as a new profile.
-    Data + photo + signature + documents all come in this one file.
-  </p>
-  <button id="importStudentFile">📥 Import Student Profile File</button>
-  <input type="file" id="importFileInput" accept=".json" style="display:none;">
-  <div id="importStatus" style="margin-top:8px;font-size:13px;"></div>
+  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+    <input type="text" id="profileSearch" placeholder="🔍 Search by name, mobile, district..."
+           style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #ccc;border-radius:5px;font-size:13px;">
+    <button id="bulkImportBtn" style="background:#007bff;color:#fff;">📥 Import Multiple Students</button>
+    <input type="file" id="bulkImportInput" accept=".json" multiple style="display:none;">
+    <button id="exportAllBtn" style="background:#6c757d;color:#fff;">💾 Backup All</button>
+    <button id="addFullTemplate" style="background:#28a745;color:#fff;">+ New Student</button>
+  </div>
 
-  <hr>
-  <h2>File Uploads</h2>
-  <p style="color:#666;font-size:13px;">Upload your files once. They'll be used on every form.</p>
-  <label>Select Profile: <select id="fileProfileSelect"></select></label>
-  <div id="fileSlots"></div>
+  <div id="importStatus" style="margin-bottom:10px;font-size:13px;"></div>
+
+  <div id="studentGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:20px;"></div>
+
+    <div id="profileEditorWrap" style="display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h3 id="editorTitle" style="margin:0;">Edit Student</h3>
+      <button id="closeEditor" style="background:#6c757d;color:#fff;padding:6px 12px;">✕ Close</button>
+    </div>
+
+    <div id="profiles"></div>
+
+    <hr>
+    <h2>📎 Files for <span id="fileOwnerName">this student</span></h2>
+    <p style="color:#666;font-size:13px;">Upload photos, signatures, marksheets, certificates. Every form uses these automatically.</p>
+    <div style="margin-bottom:10px;">
+      <label style="font-size:12px;font-weight:bold;">Currently Editing:</label>
+      <select id="fileProfileSelect" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:5px;margin-top:4px;"></select>
+    </div>
+    <div id="fileSlots"></div>
+
+    <div style="margin-top:10px;">
+      <button id="addCustomFileBtn" style="background:#1e40af;color:#fff;padding:8px 14px;">+ Add Custom File Slot</button>
+    </div>
+    <div id="customFileStatus" style="margin-top:6px;font-size:12px;color:#555;"></div>
+  </div>
 
   <hr>
   <h2>Learned Fills</h2>

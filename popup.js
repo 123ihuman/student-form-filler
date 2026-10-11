@@ -15,89 +15,134 @@ document.addEventListener('DOMContentLoaded', async function () {
   const data = await chrome.storage.local.get(['profiles']);
   profilesList = data.profiles || [];
   const sel = document.getElementById('profileSelect');
-  sel.innerHTML = '';
-  profilesList.forEach(function (p) {
+
+  // ── Build search index ──
+  function buildOption(p) {
     const o = document.createElement('option');
     o.value = p.id;
     o.textContent = p.name || 'Unnamed';
-    sel.appendChild(o);
+    const f = p.fields || {};
+    o.dataset.search = [
+      p.name, f.fullName, f.fatherName, f.motherName,
+      f.mobile, f.district, f.aadhaarNumber, f.email
+    ].filter(Boolean).join(' ').toLowerCase();
+    return o;
+  }
+
+  let currentSelectedId = null;
+
+  function renderOptions(filter) {
+    const q = (filter || '').toLowerCase().trim();
+    sel.innerHTML = '';
+    let shown = 0;
+
+    profilesList.forEach(function (p) {
+      const o = buildOption(p);
+      if (!q || o.dataset.search.indexOf(q) !== -1) {
+        sel.appendChild(o);
+        shown++;
+      }
+    });
+
+    if (!shown) {
+      const o = document.createElement('option');
+      o.value = '';
+      o.textContent = '— No matches —';
+      sel.appendChild(o);
+    }
+
+    if (currentSelectedId && profilesList.some(function (p) { return p.id === currentSelectedId; })) {
+      sel.value = currentSelectedId;
+    }
+    updateSelectedHint();
+  }
+
+  function updateSelectedHint() {
+    const hint = document.getElementById('selectedHint');
+    if (!hint) return;
+    const selected = profilesList.find(function (p) { return p.id === sel.value; });
+    if (!selected) { hint.textContent = ''; return; }
+    const f = selected.fields || {};
+    const bits = [];
+    if (f.mobile) bits.push('📱 ' + f.mobile);
+    if (f.district) bits.push('📍 ' + f.district);
+    hint.textContent = bits.length ? bits.join(' • ') : '';
+  }
+
+  sel.addEventListener('change', function () {
+    currentSelectedId = sel.value;
+    updateSelectedHint();
+    chrome.storage.local.set({ activeProfileId: currentSelectedId });
   });
+
+  const searchBox = document.getElementById('studentSearch');
+  if (searchBox) {
+    searchBox.addEventListener('input', function () {
+      renderOptions(this.value);
+    });
+    searchBox.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        const first = sel.options[0];
+        if (first && first.value) {
+          sel.value = first.value;
+          currentSelectedId = first.value;
+          updateSelectedHint();
+          chrome.storage.local.set({ activeProfileId: first.value });
+        }
+      }
+    });
+  }
+
+  renderOptions('');
 
   document.getElementById('openOptions').onclick = function () {
     chrome.runtime.openOptionsPage();
   };
 
-  document.getElementById('fillBtn').onclick = async function () {
+  // ══════ FILL BUTTON ══════
+     document.getElementById('fillBtn').onclick = async function () {
     const profile = profilesList.find(function (p) { return p.id === sel.value; });
-    if (!profile) return alert('Create a profile first.');
+    if (!profile) return alert('Please select a student from the dropdown.');
 
-        // Check if already injected
-    let alreadyLoaded = false;
-    try {
-      const check = await chrome.scripting.executeScript({
-        target: { tabId: currentTab.id },
-        func: function () { return typeof window.FIELD_ALIASES !== 'undefined'; }
-      });
-      alreadyLoaded = check && check[0] && check[0].result === true;
-    } catch (e) {}
+    await chrome.storage.local.set({ activeProfileId: profile.id });
 
-    if (!alreadyLoaded) {
-      const filesToInject = ['aliases.js', 'fuzzy.js', 'smartMatch.js', 'siteRules.js', 'datePicker.js', 'ai.js', 'fileFiller.js', 'content.js', 'genderFix.js', 'cbseitmsFix.js', 'nielitFix.js'];
-      for (let i = 0; i < filesToInject.length; i++) {
-        try {
-          await chrome.scripting.executeScript({
-            target: { tabId: currentTab.id },
-            files: [filesToInject[i]]
-          });
-        } catch (e) {
-          console.warn('Skip missing file: ' + filesToInject[i]);
-        }
+    showResult('⏳ Injecting scripts...', 'warn');
+
+    const filesToInject = [
+      'aliases.js', 'fuzzy.js', 'smartMatch.js', 'siteRules.js', 'datePicker.js',
+      'ai.js', 'fileFiller.js', 'content.js',
+      'genderFix.js', 'cbseitmsFix.js', 'nielitFix.js', 'bpscFix.js',
+      'rrbFix.js', 'bankingFix.js', 'coastGuardFix.js', 'altMobileFix.js',
+      'sscFormFix.js', 'sscVerifyNameFix.js', 'digialmFix.js', 'digialmRadioFix.js',
+      'dsssbFix.js', 'dsssbForce.js'
+    ];
+
+    // Inject once
+    for (let i = 0; i < filesToInject.length; i++) {
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: currentTab.id },
+          files: [filesToInject[i]]
+        });
+      } catch (e) {
+        console.warn('Skip ' + filesToInject[i] + ':', e.message);
       }
     }
 
-        let responded = false;
-    const timeoutId = setTimeout(function () {
-      if (!responded) {
-        showResult(
-          '⏱ No response from page after 30 seconds.\n\n' +
-          'Possible causes:\n' +
-          '1. Open DevTools (F12) → Console → look for red errors\n' +
-          '2. Refresh the page and try again\n' +
-          '3. Some fields may have been filled anyway — check the form',
-          'error'
-        );
-      }
-    }, 30000);
+    showResult('⏳ Filling... watch the page for green fields.', 'warn');
 
-    chrome.tabs.sendMessage(currentTab.id, { action: 'fill', profile: profile }, function (r) {
-      responded = true;
-      clearTimeout(timeoutId);
+    // Single fill — fire and forget
+    try {
+      chrome.tabs.sendMessage(currentTab.id, { action: 'fill', profile: profile });
+    } catch (e) {
+      console.warn('sendMessage error:', e.message);
+    }
 
-      if (chrome.runtime.lastError || !r) {
-        showResult('❌ Error: could not reach page.\n' + (chrome.runtime.lastError ? chrome.runtime.lastError.message : ''), 'error');
-        return;
-      }
-      const lines = [];
-      lines.push('Rules filled: ' + r.filled.length);
-      lines.push('AI filled: ' + (r.aiFilled ? r.aiFilled.length : 0) + ' (via ' + (r.aiProvider || 'none') + ')');
-      lines.push('Files uploaded: ' + (r.files ? r.files.uploaded.length : 0));
-      if (r.files && r.files.uploaded.length) {
-        r.files.uploaded.forEach(function (f) {
-          lines.push('   - ' + f.kind + ' (' + f.size + ')');
-        });
-      }
-      lines.push('Missed: ' + r.missed.length);
-      if (r.validationIssues && r.validationIssues.length) {
-        lines.push('');
-        lines.push('Validation warnings:');
-        r.validationIssues.forEach(function (v) {
-          lines.push('   - ' + v.field + ': ' + v.reason);
-        });
-      }
-      showResult(lines.join('\n'), 'ok');
-    });
+    setTimeout(function () {
+      showResult('✅ Fill started. Check the page.', 'ok');
+    }, 800);
   };
-
+  // ══════ VALIDATE BUTTON ══════
   document.getElementById('validateBtn').onclick = function () {
     const profile = profilesList.find(function (p) { return p.id === sel.value; });
     if (!profile) return alert('No profile.');
@@ -105,8 +150,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (!issues.length) return showResult('All fields valid.', 'ok');
     showResult('Issues:\n' + issues.map(function (i) { return ' - ' + i.field + ': ' + i.reason; }).join('\n'), 'warn');
   };
-});
 
+}); // ← CLOSES DOMContentLoaded
+
+// ══════ HELPER FUNCTIONS (outside the listener) ══════
 function validateLocal(profile) {
   const V = {
     aadhaarNumber: function (v) { return /^\d{12}$/.test(String(v).replace(/\s/g, '')); },
@@ -127,6 +174,7 @@ function validateLocal(profile) {
 
 function showResult(text, kind) {
   const box = document.getElementById('resultBox');
+  if (!box) return;
   box.classList.remove('hidden');
   box.textContent = text;
   box.style.background = kind === 'error' ? '#f8d7da' : kind === 'warn' ? '#fff3cd' : '#d4edda';
@@ -136,24 +184,24 @@ function showResult(text, kind) {
   box.style.whiteSpace = 'pre-line';
   box.style.fontSize = '12px';
 }
-// ========== Prepare Uploads section ==========
+
+// ══════ PREPARE UPLOADS (runs separately) ══════
 (async function initPrepareSection() {
   const section = document.getElementById('prepareSection');
   const buttonsBox = document.getElementById('prepareButtons');
   const statusBox = document.getElementById('prepareStatus');
   if (!section || !buttonsBox) return;
 
-  let currentTab = null;
+  let tab = null;
   try {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-    currentTab = tabs[0];
+    tab = tabs[0];
   } catch (e) {}
 
-  if (!currentTab || !currentTab.url || currentTab.url.indexOf('chrome://') === 0) return;
+  if (!tab || !tab.url || tab.url.indexOf('chrome://') === 0) return;
 
   section.classList.remove('hidden');
 
-  // Human-friendly labels
   const LABELS = {
     photo: 'Photo',
     signature: 'Signature (Eng)',
@@ -173,10 +221,11 @@ function showResult(text, kind) {
     consentForm: 'Consent Form'
   };
 
-  // Detect which kinds exist on the page
   let detected = {};
   try {
-    detected = await window.detectPageRequirements(currentTab.id);
+    if (typeof window.detectPageRequirements === 'function') {
+      detected = await window.detectPageRequirements(tab.id);
+    }
   } catch (e) {
     console.warn('detect failed', e);
   }
@@ -200,7 +249,6 @@ function showResult(text, kind) {
     else if (req.maxKB) sub = ' (max ' + req.maxKB + ' KB)';
     else if (req.minKB) sub = ' (min ' + req.minKB + ' KB)';
     btn.textContent = '⬇ ' + label + sub;
-    btn.title = 'Prepare ' + label + ' and download to FormUploads/';
     btn.addEventListener('click', async function () {
       btn.disabled = true;
       statusBox.textContent = 'Preparing ' + label + '...';
@@ -210,7 +258,7 @@ function showResult(text, kind) {
           btn.classList.add('done');
           statusBox.textContent = '✅ ' + label + ' → ' + r.filename + ' (' + r.sizeKB + ' KB)\nFind it in Downloads/FormUploads/';
         } else {
-          statusBox.textContent = '❌ ' + label + ': ' + r.error + '\nSave this file first in Options → File Uploads.';
+          statusBox.textContent = '❌ ' + label + ': ' + r.error;
         }
       } catch (e) {
         statusBox.textContent = '❌ ' + label + ': ' + e.message;

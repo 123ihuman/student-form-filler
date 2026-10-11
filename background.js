@@ -290,3 +290,28 @@ function shortName(kind) {
   };
   return MAP[kind] || kind.slice(0, 10);
 }
+// ══════════════════════════════════════════════════════════
+// DSSSB: re-inject dsssbFix after each site reload
+// ══════════════════════════════════════════════════════════
+chrome.tabs.onUpdated.addListener(async function (tabId, info, tab) {
+  if (info.status !== 'complete') return;
+  if (!tab || !tab.url) return;
+  if (!/dsssonline\.nic\.in/i.test(tab.url)) return;
+
+  try {
+    const d = await chrome.storage.local.get('dsssbQueueActive');
+    if (d.dsssbQueueActive !== true) return;
+
+    setTimeout(async function () {
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tabId },
+          files: ['aliases.js', 'dsssbFix.js']
+        });
+        console.log('[bg] re-injected dsssbFix on reload');
+      } catch (e) {
+        console.warn('[bg] re-inject failed:', e.message);
+      }
+    }, 1500);
+  } catch (e) {}
+});

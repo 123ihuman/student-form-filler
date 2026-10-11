@@ -9,8 +9,13 @@
 
   <div id="notEgram" class="warn hidden">Open a form page first.</div>
 
-  <div id="mainPanel" class="hidden">
-    <label>Profile: <select id="profileSelect"></select></label>
+    <div id="mainPanel" class="hidden">
+    <label>Find Student:</label>
+    <input type="text" id="studentSearch" placeholder="🔍 Type name, mobile, or district..." autocomplete="off">
+
+    <label>Selected Profile: <span id="selectedHint" style="color:#666;font-weight:normal;"></span></label>
+    <select id="profileSelect" size="1"></select>
+
     <button id="fillBtn" class="action">Fill This Page</button>
     <button id="validateBtn">Validate Profile</button>
 
@@ -27,7 +32,8 @@
 
     <hr>
     <button id="openOptions">Manage Profiles & Files</button>
-  </div>
+      <div id="activeInfo" style="font-size:11px;color:#888;text-align:center;margin-top:6px;"></div>
+</div>
 
   <script src="aliases.js"></script>
   <script src="filePreparer.js"></script>
