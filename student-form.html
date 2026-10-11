@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Student Profile — For Form Filling</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    margin: 0;
+    padding: 16px;
+    background: #f4f6fa;
+    color: #222;
+    font-size: 15px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 {
+    color: #1e40af;
+    font-size: 20px;
+    margin: 0 0 4px;
+  }
+  .intro {
+    background: #fff;
+    border-left: 4px solid #1e40af;
+    padding: 12px 14px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  details {
+    background: #fff;
+    border: 1px solid #d0d7e2;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  summary {
+    padding: 12px 14px;
+    font-weight: bold;
+    font-size: 14px;
+    color: #1e40af;
+    cursor: pointer;
+    user-select: none;
+    background: #eef4ff;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+    padding: 14px;
+  }
+  @media (max-width: 500px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .row { display: flex; flex-direction: column; }
+  label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 3px;
+  }
+  input, select {
+    padding: 9px 11px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-family: inherit;
+    background: #fff;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: #1e40af;
+    box-shadow: 0 0 0 2px rgba(30,64,175,0.15);
+  }
+  .file-row {
+    padding: 12px 14px;
+    border-top: 1px solid #eee;
+  }
+  .file-row label { display: block; margin-bottom: 6px; }
+  .file-row input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px dashed #b8daff;
+    background: #f8fbff;
+  }
+  .file-hint {
+    font-size: 11px;
+    color: #888;
+    margin-top: 4px;
+  }
+  .btn-bar {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    padding: 12px;
+    margin: 20px -16px -16px;
+    border-top: 2px solid #1e40af;
+    text-align: center;
+  }
+  .btn {
+    padding: 14px 22px;
+    font-size: 15px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 4px;
+  }
+  .save {
+    background: #28a745;
+    color: #fff;
+    width: 100%;
+    max-width: 400px;
+  }
+  .save:active { background: #1e7e34; }
+  .status {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 13px;
+    color: #0a7d33;
+    min-height: 18px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>📝 My Student Profile</h1>
+  <div class="intro">
+    Fill this form once. Save it as a file. Send that file to your helper.
+    They'll use it to fill your exam / college / scholarship forms automatically.
+    <br><br>
+    <b>Your data stays on your device</b> — nothing is uploaded anywhere.
+  </div>
+
+  <details open>
+    <summary>👤 Personal Information</summary>
+    <div class="grid">
+      <div class="row"><label>Salutation</label><input data-key="salutation" placeholder="Mr. / Ms. / Shri"></div>
+      <div class="row"><label>Full Name (as in certificate)</label><input data-key="fullName" data-upper placeholder="UMA SHANKER CHOUDHARY"></div>
+      <div class="row"><label>First Name</label><input data-key="firstName" data-upper></div>
+      <div class="row"><label>Middle Name</label><input data-key="middleName" data-upper></div>
+      <div class="row"><label>Last Name</label><input data-key="lastName" data-upper></div>
+      <div class="row"><label>Father's Name</label><input data-key="fatherName" data-upper></div>
+      <div class="row"><label>Mother's Name</label><input data-key="motherName" data-upper></div>
+      <div class="row"><label>Date of Birth (YYYY-MM-DD)</label><input data-key="dob" type="date"></div>
+      <div class="row"><label>Gender</label><select data-key="gender"><option value="">—</option><option>Male</option><option>Female</option><option>Transgender</option></select></div>
+      <div class="row"><label>Marital Status</label><select data-key="maritalStatus"><option value="">—</option><option>Unmarried</option><option>Married</option><option>Widow</option><option>Divorced</option></select></div>
+      <div class="row"><label>Religion</label><input data-key="religion" placeholder="Hindu"></div>
+      <div class="row"><label>Category</label><select data-key="category"><option value="">—</option><option>General</option><option>OBC</option><option>SC</option><option>ST</option><option>EWS</option></select></div>
+      <div class="row"><label>Nationality</label><input data-key="nationality" placeholder="Indian"></div>
+      <div class="row"><label>Occupation</label><input data-key="occupation" placeholder="Student"></div>
+      <div class="row"><label>Identification Mark</label><input data-key="identificationMark" placeholder="Mole on right cheek"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>📞 Contact</summary>
+    <div class="grid">
+      <div class="row"><label>Mobile Number (10 digits)</label><input data-key="mobile" inputmode="numeric" maxlength="10"></div>
+      <div class="row"><label>Alternate Mobile</label><input data-key="alternateMobile" inputmode="numeric" maxlength="10"></div>
+      <div class="row"><label>Email</label><input data-key="email" type="email"></div>
+      <div class="row"><label>STD Code</label><input data-key="stdCode" placeholder="0621"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>🏠 Address</summary>
+    <div class="grid">
+      <div class="row"><label>Address Line 1</label><input data-key="addressLine1"></div>
+      <div class="row"><label>Address Line 2</label><input data-key="addressLine2"></div>
+      <div class="row"><label>Village / Area</label><input data-key="village"></div>
+      <div class="row"><label>City / Town</label><input data-key="city"></div>
+      <div class="row"><label>District</label><input data-key="district" data-upper></div>
+      <div class="row"><label>State</label><input data-key="state" data-upper></div>
+      <div class="row"><label>PIN Code (6 digits)</label><input data-key="pincode" inputmode="numeric" maxlength="6"></div>
+      <div class="row"><label>Country</label><input data-key="country" placeholder="India"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>🆔 Identity Numbers</summary>
+    <div class="grid">
+      <div class="row"><label>Aadhaar (12 digits)</label><input data-key="aadhaarNumber" inputmode="numeric" maxlength="12"></div>
+      <div class="row"><label>PAN (ABCDE1234F)</label><input data-key="panNumber" data-upper></div>
+      <div class="row"><label>APAAR ID (if any)</label><input data-key="apaarId"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>📚 10th (Matriculation)</summary>
+    <div class="grid">
+      <div class="row"><label>Board</label><input data-key="tenthBoard" placeholder="CBSE"></div>
+      <div class="row"><label>School Name</label><input data-key="tenthSchool"></div>
+      <div class="row"><label>Roll Number</label><input data-key="tenthRollNumber"></div>
+      <div class="row"><label>Registration Number</label><input data-key="tenthRegistrationNumber"></div>
+      <div class="row"><label>Year of Passing</label><input data-key="tenthYear" inputmode="numeric" maxlength="4"></div>
+      <div class="row"><label>Percentage / CGPA</label><input data-key="tenthPercentage"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>📚 12th (Higher Secondary)</summary>
+    <div class="grid">
+      <div class="row"><label>Board</label><input data-key="twelfthBoard"></div>
+      <div class="row"><label>School / College</label><input data-key="twelfthSchool"></div>
+      <div class="row"><label>Roll Number</label><input data-key="twelfthRollNumber"></div>
+      <div class="row"><label>Registration Number</label><input data-key="twelfthRegistrationNumber"></div>
+      <div class="row"><label>Year of Passing</label><input data-key="twelfthYear" inputmode="numeric" maxlength="4"></div>
+      <div class="row"><label>Percentage / CGPA</label><input data-key="twelfthPercentage"></div>
+      <div class="row"><label>Stream</label><input data-key="twelfthStream" placeholder="Science / Commerce / Arts"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>🎓 Graduation (if any)</summary>
+    <div class="grid">
+      <div class="row"><label>University</label><input data-key="graduationUniversity"></div>
+      <div class="row"><label>College</label><input data-key="graduationCollege"></div>
+      <div class="row"><label>Degree</label><input data-key="graduationDegree"></div>
+      <div class="row"><label>Year of Passing</label><input data-key="graduationYear" inputmode="numeric" maxlength="4"></div>
+      <div class="row"><label>Percentage / CGPA</label><input data-key="graduationPercentage"></div>
+      <div class="row"><label>Roll Number</label><input data-key="graduationRollNumber"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>📎 My Files (Photos & Signatures)</summary>
+    <div class="file-row">
+      <label>📷 My Photo</label>
+      <input type="file" data-file="photo" accept="image/*">
+      <div class="file-hint">Passport-style photo. White background. Face clearly visible.</div>
+    </div>
+    <div class="file-row">
+      <label>✍️ My Signature (English)</label>
+      <input type="file" data-file="signature" accept="image/*">
+      <div class="file-hint">Sign on plain white paper with black/blue pen. Photograph it.</div>
+    </div>
+    <div class="file-row">
+      <label>✍️ My Signature (Hindi — if needed)</label>
+      <input type="file" data-file="signatureHindi" accept="image/*">
+      <div class="file-hint">Only if a form demands a Hindi signature.</div>
+    </div>
+    <div class="file-row">
+      <label>✍️ Parent's Signature</label>
+      <input type="file" data-file="parentSignature" accept="image/*">
+      <div class="file-hint">Father's or mother's signature on plain white paper.</div>
+    </div>
+    <div class="file-row">
+      <label>👍 Left Thumb Impression</label>
+      <input type="file" data-file="thumbLeft" accept="image/*">
+      <div class="file-hint">Only if a form demands it (some do).</div>
+    </div>
+    <div class="file-row">
+      <label>📄 10th Marksheet (PDF or image)</label>
+      <input type="file" data-file="tenthMarksheet" accept="image/*,application/pdf">
+    </div>
+    <div class="file-row">
+      <label>📄 12th Marksheet</label>
+      <input type="file" data-file="twelfthMarksheet" accept="image/*,application/pdf">
+    </div>
+    <div class="file-row">
+      <label>📄 Aadhaar Card</label>
+      <input type="file" data-file="aadhaarCard" accept="image/*,application/pdf">
+    </div>
+    <div class="file-row">
+      <label>📄 Category Certificate (if SC/ST/OBC/EWS)</label>
+      <input type="file" data-file="casteCertificate" accept="image/*,application/pdf">
+    </div>
+  </details>
+
+  <div class="btn-bar">
+    <button class="btn save" id="saveBtn">💾 Save My Profile File</button>
+    <div class="status" id="status"></div>
+  </div>
+
+</div>
+
+<script>
+  // Auto-uppercase for names
+  document.querySelectorAll('input[data-upper]').forEach(function (inp) {
+    inp.addEventListener('input', function () {
+      const pos = inp.selectionStart;
+      inp.value = inp.value.toUpperCase();
+      inp.selectionStart = inp.selectionEnd = pos;
+    });
+  });
+
+  // Save typed data to localStorage so it survives page close
+  const STORAGE_KEY = 'studentProfileDraft';
+  function saveDraft() {
+    const draft = { fields: {}, savedAt: Date.now() };
+    document.querySelectorAll('input[data-key], select[data-key]').forEach(function (el) {
+      if (el.value) draft.fields[el.dataset.key] = el.value;
+    });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(draft)); } catch (e) {}
+  }
+  function loadDraft() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      const f = draft.fields || {};
+      document.querySelectorAll('input[data-key], select[data-key]').forEach(function (el) {
+        if (f[el.dataset.key]) el.value = f[el.dataset.key];
+      });
+    } catch (e) {}
+  }
+  loadDraft();
+  document.querySelectorAll('input, select').forEach(function (el) {
+    el.addEventListener('change', saveDraft);
+  });
+
+  // File → base64
+  function fileToBase64(file) {
+    return new Promise(function (resolve, reject) {
+      const r = new FileReader();
+      r.onload = function () { resolve(r.result.split(',')[1]); };
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+  }
+
+  // Save & download
+  document.getElementById('saveBtn').onclick = async function () {
+    const status = document.getElementById('status');
+    status.textContent = 'Preparing file...';
+
+    const out = {
+      _type: 'student-profile',
+      _version: 1,
+      _exportedAt: new Date().toISOString(),
+      name: 'Student Profile',
+      fields: {},
+      files: {}
+    };
+
+    // Collect fields
+    document.querySelectorAll('input[data-key], select[data-key]').forEach(function (el) {
+      const v = (el.value || '').trim();
+      if (v) out.fields[el.dataset.key] = v;
+    });
+
+    // Collect files
+    const fileInputs = document.querySelectorAll('input[type="file"][data-file]');
+    let fileCount = 0;
+    for (let i = 0; i < fileInputs.length; i++) {
+      const inp = fileInputs[i];
+      const f = inp.files[0];
+      if (!f) continue;
+      status.textContent = 'Reading ' + inp.dataset.file + '...';
+      try {
+        const b64 = await fileToBase64(f);
+        out.files[inp.dataset.file] = {
+          base64: b64,
+          type: f.type || 'image/jpeg',
+          name: f.name,
+          size: f.size
+        };
+        fileCount++;
+      } catch (e) {}
+    }
+
+    // Use name as fallback for filename
+    if (out.fields.fullName) {
+      out.name = out.fields.fullName;
+    }
+
+    // Download as JSON file
+    const json = JSON.stringify(out, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safeName = (out.fields.fullName || 'student').replace(/[^A-Za-z0-9]/g, '_');
+    a.href = url;
+    a.download = safeName + '_profile.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+
+    status.textContent = '✅ Saved! File downloaded: ' + a.download + ' (' + fileCount + ' files, ' + Object.keys(out.fields).length + ' fields)';
+  };
+</script>
+
+</body>
+</html>

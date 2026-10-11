@@ -28,6 +28,16 @@
   <button id="addFullTemplate">+ Add Full Template (all fields)</button>
 
   <hr>
+  <h2>📥 Import Student File</h2>
+  <p style="color:#666;font-size:13px;">
+    Student sends you their <b>_profile.json</b> file → click below to load it as a new profile.
+    Data + photo + signature + documents all come in this one file.
+  </p>
+  <button id="importStudentFile">📥 Import Student Profile File</button>
+  <input type="file" id="importFileInput" accept=".json" style="display:none;">
+  <div id="importStatus" style="margin-top:8px;font-size:13px;"></div>
+
+  <hr>
   <h2>File Uploads</h2>
   <p style="color:#666;font-size:13px;">Upload your files once. They'll be used on every form.</p>
   <label>Select Profile: <select id="fileProfileSelect"></select></label>

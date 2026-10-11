@@ -434,3 +434,59 @@ loadAI();
 loadProfiles();
 loadLearned();
 renderFileSlots();
+// ========== Import student profile ==========
+document.getElementById('importStudentFile').onclick = function () {
+  document.getElementById('importFileInput').click();
+};
+
+document.getElementById('importFileInput').onchange = function (e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const status = document.getElementById('importStatus');
+  status.textContent = 'Reading file...';
+
+  const reader = new FileReader();
+  reader.onload = async function () {
+    try {
+      const data = JSON.parse(reader.result);
+
+      // Validate — must be a student-profile file
+      if (data._type !== 'student-profile' || !data.fields) {
+        status.textContent = '❌ Not a valid student profile file. Make sure the student used the correct student-form.html.';
+        return;
+      }
+
+      // Build profile object for the extension
+      const newProfile = {
+        id: Date.now().toString(),
+        name: data.name || data.fields.fullName || 'Imported Student',
+        fields: data.fields || {},
+        files: data.files || {},
+        importedAt: new Date().toISOString()
+      };
+
+      // Add to storage
+      const d = await chrome.storage.local.get('profiles');
+      const all = d.profiles || [];
+      all.push(newProfile);
+      await chrome.storage.local.set({ profiles: all });
+
+      // Report
+      const fieldCount = Object.keys(newProfile.fields).length;
+      const fileCount = Object.keys(newProfile.files).length;
+      const fileList = Object.keys(newProfile.files).join(', ') || 'none';
+
+      status.innerHTML =
+        '✅ <b>' + newProfile.name + '</b> imported successfully!<br>' +
+        '📝 ' + fieldCount + ' fields filled<br>' +
+        '📎 ' + fileCount + ' files received: ' + fileList;
+
+      // Refresh the UI
+      loadProfiles();
+      renderFileSlots();
+    } catch (err) {
+      status.textContent = '❌ Parse error: ' + err.message;
+    }
+  };
+  reader.readAsText(f);
+};
